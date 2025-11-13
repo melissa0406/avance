@@ -1,0 +1,23 @@
+# 1) Moverte a la carpeta donde quieres clonar
+cd "C:\Users\ASUS\Desktop\Univalle\Estadistica IV"
+
+# 2) Clonar
+git clone https://github.com/USUARIO/NOMBRE_REPO.git
+
+# 3) Entrar a la carpeta
+cd NOMBRE_REPO
+
+# 4) Ver estado
+git status
+ mueves todo a la carpeta clonada y luego actualizas para subir al git hub 
+# Ver qué cambió
+git status
+
+# Agregar todo lo modificado
+git add .
+
+# Guardar un "punto" en la historia
+git commit -m "Mensaje claro: por ejemplo 'Agrego practica Shiny'"
+
+# Subir a GitHub
+git push
