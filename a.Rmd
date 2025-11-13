@@ -1,0 +1,289 @@
+yaml
+---
+title: "Basic Example"
+author: "Ruben Cabrera"
+date: "2025-11-06"
+output: 
+  github_document: default
+  html_document: default
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_format = "all") })
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+```{r}
+
+```
+cat(yaml_header)
+
+
+# Librerias
+```{r librerias}
+library(ggplot2)
+library(dplyr)
+```
+
+Poblacion
+
+```{r}
+# Definir los datos de los estratos manualmente
+stratum <- c("A", "B", "C")
+Nh <- c(3000, 4000, 5000)  # Tamaños de población por estrato
+Sh <- c(48, 79, 76)        # Desviaciones estándar por estrato
+
+# Combinar en un data frame para mejor manejo
+strata_data <- data.frame(stratum, Nh, Sh)
+strata_data
+```
+```{r}
+strata_data <- strata_data %>% mutate(peso = Nh/sum(Nh)) %>% 
+                  mutate(nh = round(400*peso,0)) %>%
+                  mutate(peso_optimo = Nh*Sh) %>% 
+                  mutate(nh_optimo = round(400*peso_optimo/sum(peso_optimo),0))  
+strata_data               
+```
+```{r}
+set.seed(123)
+# Parámetros poblacionales
+N_A <- 3000; mu_A <- 50; sigma_A <- 10; poblacion_A <- 
+  rnorm(N_A, mean = mu_A, sd = sigma_A)
+N_B <- 4000; mu_B <- 65; sigma_B <- 25; poblacion_B <- 
+  rnorm(N_B, mean = mu_B, sd = sigma_B)
+N_C <- 5000; mu_C <- 80; sigma_C <- 50; poblacion_C <- 
+  rnorm(N_C, mean = mu_C, sd = sigma_C)
+ 
+N_total <- sum(N_A, N_B, N_C)
+```
+
+```{r}
+df <- data.frame(
+  estrato = c("A","A","A","B","B","C"),
+  x = c(10,20,15,20,30,35)
+)
+df
+```
+```{r}
+temp <- c(poblacion_A,poblacion_B) 
+df_A <- data.frame(x = poblacion_A, estrato = "A")
+df_B <- data.frame(x = poblacion_B, estrato = "B")
+df_C <- data.frame(x = poblacion_C, estrato = "C")
+
+df <- bind_rows(df_A,df_B,df_C)
+
+```
+```{r}
+df <- data.frame(mi_var = c(poblacion_A,poblacion_B,poblacion_C),
+                 estrato = c(rep("Estrato A",N_A),
+                  rep("Estrato B",N_B),rep("Estrato C",N_C)))
+df
+```
+```{r}
+mean(df$mi_var)
+```
+```{r}
+summarise(group_by(df,estrato), media_poblacional = mean(mi_var), tamano = n())
+
+resumen <- group_by(df,estrato) %>% summarise(
+                                   media_poblacional = mean(mi_var),
+                                   tamano = n())
+
+resumen
+```
+
+
+Proporcional
+
+```{r}
+set.seed(456)
+sample_A <- sample(poblacion_A, size = 100 , replace = FALSE)
+sample_B <- sample(poblacion_B, size = 133 , replace = FALSE)
+sample_C <- sample(poblacion_C, size = 167 , replace = FALSE)
+
+mean(sample_A)
+mean(sample_B)
+mean(sample_C)
+```
+Asignacion Optima
+
+```{r}
+set.seed(456)
+sample_A <- sample(poblacion_A, size = 69 , replace = FALSE)
+sample_B <- sample(poblacion_B, size = 150 , replace = FALSE)
+sample_C <- sample(poblacion_C, size = 181 , replace = FALSE)
+```
+
+```{r}
+mean(sample_A)*(3/12)+mean(sample_B)*(4/12)+mean(sample_C)*(5/12)
+```
+
+
+
+
+```{r}
+# Tamaño total de la muestra deseado (n)
+n_total <- 400
+N_total <- sum(strata_data$Nh)
+
+proportions <- strata_data$Nh / N_total
+proportions
+n_total*proportions
+
+# Añadir los resultados al data frame
+strata_data$n_proportional <- proportions
+
+print("Resultados de Afijación Proporcional:")
+print(strata_data)
+
+cat("Suma de nh proporcional:", sum(strata_data$n_proportional), "\n")
+```
+```{r}
+# Paso 1: Calcular el numerador de la fórmula para cada estrato (Nh * Sh)
+numerator_values <- strata_data$Nh * strata_data$Sh
+
+# Paso 2: Calcular el denominador (la suma de todos los numeradores)
+denominator_sum <- sum(numerator_values)
+
+# Paso 3: Calcular el peso de Neyman para cada estrato
+# weight_neyman = (Nh * Sh) / sum(Nh * Sh)
+neyman_weights <- numerator_values / denominator_sum
+
+# Paso 4: Calcular el tamaño de muestra para cada estrato (nh = n * weight_neyman)
+n_neyman <- round(n_total * neyman_weights)
+
+# Añadir los resultados al data frame
+strata_data$n_neyman <- n_neyman
+
+print("Resultados de Afijación Óptima (Neyman):")
+print(strata_data)
+
+cat("Suma de nh Neyman:", sum(strata_data$n_neyman), "\n")
+
+
+```
+
+
+```{r}
+# --- Paso 1: Generar Datos Artificiales Simulados ---
+
+set.seed(123) # Para reproducibilidad
+
+# Definir parámetros para 3 estratos
+N_A <- 3000
+mu_A <- 50
+sigma_A <- 10 # Desv. Estándar Baja
+
+N_B <- 4000
+mu_B <- 65
+sigma_B <- 25 # Desv. Estándar Moderada
+
+N_C <- 5000
+mu_C <- 80
+sigma_C <- 50 # Desv. Estándar Alta
+
+# Simular las poblaciones artificiales (opcional, solo para visualización)
+poblacion_A <- rnorm(N_A, mean = mu_A, sd = sigma_A)
+poblacion_B <- rnorm(N_B, mean = mu_B, sd = sigma_B)
+poblacion_C <- rnorm(N_C, mean = mu_C, sd = sigma_C)
+
+```
+
+```{r}
+hist(poblacion_A)
+hist(poblacion_B)
+hist(poblacion_C)
+```
+
+```{r}
+# Creamos el data frame con los parámetros clave necesarios (Nh y Sh)
+strata_data_sim <- data.frame(
+  stratum = c("A", "B", "C"),
+  Nh = c(N_A, N_B, N_C),       # Tamaños de población (N_h)
+  Sh = c(sigma_A, sigma_B, sigma_C) # Desviaciones estándar (S_h)
+)
+
+n_total <- 200 # Tamaño de muestra total deseado
+N_total <- sum(strata_data_sim$Nh)
+
+print("Parámetros de los Estratos:")
+print(strata_data_sim)
+cat("Tamaño de Población Total (N):", N_total, "\n")
+cat("Tamaño de Muestra Total (n):", n_total, "\n\n")
+
+
+```
+```{r}
+
+strata_data_sim$n_proportional <- round(n_total * (strata_data_sim$Nh / N_total))
+
+print("Resultados de Afijación Proporcional:")
+print(strata_data_sim)
+cat("Suma de nh proporcional:", sum(strata_data_sim$n_proportional), "\n\n")
+
+
+```
+```{r}
+# Calcular el peso ponderado (Nh * Sh)
+numerator_values <- strata_data_sim$Nh * strata_data_sim$Sh
+denominator_sum <- sum(numerator_values)
+
+# Calcular los pesos de Neyman y los tamaños de muestra
+neyman_weights <- numerator_values / denominator_sum
+strata_data_sim$n_neyman <- round(n_total * neyman_weights)
+
+print("Resultados de Afijación Óptima (Neyman):")
+print(strata_data_sim)
+cat("Suma de nh Neyman:", sum(strata_data_sim$n_neyman), "\n")
+
+```
+
+```{r}
+sample(poblacion_A,50)
+```
+```{r}
+set.seed(123)
+# Parámetros poblacionales
+N_A <- 3000; mu_A <- 50; sigma_A <- 10; poblacion_A <- rnorm(N_A, mean = mu_A, sd = sigma_A)
+N_B <- 4000; mu_B <- 65; sigma_B <- 25; poblacion_B <- rnorm(N_B, mean = mu_B, sd = sigma_B)
+N_C <- 5000; mu_C <- 80; sigma_C <- 50; poblacion_C <- rnorm(N_C, mean = mu_C, sd = sigma_C)
+
+N_total <- sum(N_A, N_B, N_C)
+
+# --- Tamaños de muestra usando Afijación Óptima de Neyman ---
+# Estos valores se obtuvieron del cálculo previo:
+n_A_neyman <- 35
+n_B_neyman <- 77
+n_C_neyman <- 88
+
+# --- Paso 1: Realizar el Muestreo Real ---
+sample_A <- sample(poblacion_A, size = n_A_neyman, replace = FALSE)
+sample_B <- sample(poblacion_B, size = n_B_neyman, replace = FALSE)
+sample_C <- sample(poblacion_C, size = n_C_neyman, replace = FALSE)
+
+# --- Paso 2: Calcular las medias muestrales (y_bar_h) ---
+y_bar_A <- mean(sample_A)
+y_bar_B <- mean(sample_B)
+y_bar_C <- mean(sample_C)
+
+results_neyman <- data.frame(
+  stratum = c("A", "B", "C"),
+  Nh = c(N_A, N_B, N_C),
+  y_bar_h = c(y_bar_A, y_bar_B, y_bar_C)
+)
+
+# --- Paso 3: Calcular la Media Poblacional Estimada (Y_bar_st) ---
+
+# Calcular los pesos de los estratos (Wh = Nh / N_total)
+results_neyman$Wh <- results_neyman$Nh / N_total
+
+# Calcular el producto ponderado para cada estrato (Wh * y_bar_h)
+results_neyman$weighted_mean <- results_neyman$Wh * results_neyman$y_bar_h
+
+# Sumar los productos ponderados para obtener la media poblacional total estimada
+Y_bar_st_neyman <- sum(results_neyman$weighted_mean)
+
+print("Resultados de la estimación con afijación de Neyman:")
+print(results_neyman)
+cat("\nEstimación de la Media Poblacional Total (Y_bar_st):", Y_bar_st_neyman, "\n")
+
+```
